@@ -169,12 +169,13 @@ async function fetchGameState() {
 
         const newState = await response.json();
 
-        // Check if numbers just got assigned
-        if (!lastNumbersAssignedState && newState.numbersAssigned) {
-            if (newState.numbersRevealedEarly) {
-                alert('Numbers revealed! Someone has 11+ squares - time to strategize your final picks!');
-            } else {
-                alert('All squares are filled! Numbers have been assigned. Good luck!');
+        // Check if numbers just got assigned AND this player can now see them
+        const myNewCount = newState.players[currentPlayer] || 0;
+        if (newState.numbersAssigned && myNewCount >= 11) {
+            const myOldCount = gameState ? (gameState.players[currentPlayer] || 0) : 0;
+            // Alert only if player just crossed the 11 threshold
+            if (myOldCount < 11) {
+                alert('Numbers revealed! You have 11+ squares - time to strategize your final picks!');
             }
         }
 
@@ -250,11 +251,15 @@ function updateGrid() {
 
 // Update numbers
 function updateNumbers() {
+    // Only show numbers if THIS player has 11+ squares
+    const mySquareCount = gameState.players[currentPlayer] || 0;
+    const canSeeNumbers = gameState.numbersAssigned && mySquareCount >= 11;
+
     // Patriots numbers (top row)
     for (let i = 0; i < 10; i++) {
         const cell = document.getElementById(`pn${i}`);
         if (cell) {
-            cell.textContent = gameState.numbersAssigned ? gameState.patriotsNumbers[i] : '?';
+            cell.textContent = canSeeNumbers ? gameState.patriotsNumbers[i] : '?';
         }
     }
 
@@ -262,7 +267,7 @@ function updateNumbers() {
     for (let i = 0; i < 10; i++) {
         const cell = document.getElementById(`sn${i}`);
         if (cell) {
-            cell.textContent = gameState.numbersAssigned ? gameState.seahawksNumbers[i] : '?';
+            cell.textContent = canSeeNumbers ? gameState.seahawksNumbers[i] : '?';
         }
     }
 }
@@ -351,13 +356,11 @@ async function handleSquareClick(index) {
 
             const newState = await response.json();
 
-            // Check if numbers just got assigned
-            if (!lastNumbersAssignedState && newState.numbersAssigned) {
-                if (newState.numbersRevealedEarly) {
-                    alert('Numbers revealed! Someone has 11+ squares - time to strategize your final picks!');
-                } else {
-                    alert('All squares are filled! Numbers have been assigned. Good luck!');
-                }
+            // Check if THIS player just hit 11 squares and can now see numbers
+            const myNewCount = newState.players[currentPlayer] || 0;
+            const myOldCount = gameState.players[currentPlayer] || 0;
+            if (newState.numbersAssigned && myNewCount >= 11 && myOldCount < 11) {
+                alert('Numbers revealed! You have 11+ squares - time to strategize your final 5 picks!');
             }
 
             gameState = newState;
