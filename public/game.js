@@ -5,19 +5,8 @@ let adminMode = false;
 let selectedQuarter = null;
 let lastNumbersAssignedState = false;
 
-// Zoom and pan state
+// Zoom state
 let scale = 1;
-let panX = 0;
-let panY = 0;
-let isDragging = false;
-let startX = 0;
-let startY = 0;
-let lastPanX = 0;
-let lastPanY = 0;
-
-// Touch zoom state
-let initialPinchDistance = 0;
-let initialScale = 1;
 
 // Check if player is logged in
 if (!currentPlayer) {
@@ -28,11 +17,8 @@ if (!currentPlayer) {
 const API_URL = '/api';
 
 // DOM Elements
-const viewport = document.getElementById('gridViewport');
-const container = document.getElementById('gridContainer');
-const stickyTop = document.getElementById('stickyTop');
-const stickyNumbersRow = document.getElementById('stickyNumbersRow');
-const stickyLeft = document.getElementById('stickyLeft');
+const scroller = document.getElementById('gridScroller');
+const table = document.getElementById('squaresTable');
 
 // Initialize game
 async function init() {
@@ -45,180 +31,131 @@ async function init() {
 
         gameState = await response.json();
         lastNumbersAssignedState = gameState.numbersAssigned;
+
+        buildGrid();
         updateUI();
-        initZoomPan();
+        initZoom();
+        fitToViewport();
 
         // Poll for updates every 2 seconds
         setInterval(fetchGameState, 2000);
+
+        // Refit on resize
+        window.addEventListener('resize', fitToViewport);
     } catch (error) {
         console.error('Error initializing:', error);
         alert('Failed to connect to server. Please refresh the page.');
     }
 }
 
-// Initialize zoom and pan
-function initZoomPan() {
-    // Mouse drag
-    viewport.addEventListener('mousedown', onMouseDown);
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
+// Build the grid table
+function buildGrid() {
+    const tbody = document.getElementById('gridBody');
+    tbody.innerHTML = '';
 
-    // Touch drag and pinch zoom
-    viewport.addEventListener('touchstart', onTouchStart, { passive: false });
-    viewport.addEventListener('touchmove', onTouchMove, { passive: false });
-    viewport.addEventListener('touchend', onTouchEnd);
+    for (let row = 0; row < 10; row++) {
+        const tr = document.createElement('tr');
+
+        // First cell: Seahawks team header (only in first row, spans all rows)
+        if (row === 0) {
+            const th = document.createElement('th');
+            th.className = 'team-header seahawks';
+            th.rowSpan = 10;
+            th.textContent = 'SEAHAWKS';
+            tr.appendChild(th);
+        }
+
+        // Second cell: Seahawks number
+        const numCell = document.createElement('td');
+        numCell.className = 'row-number-cell';
+        numCell.id = `sn${row}`;
+        numCell.textContent = '?';
+        tr.appendChild(numCell);
+
+        // 10 square cells
+        for (let col = 0; col < 10; col++) {
+            const td = document.createElement('td');
+            td.className = 'square';
+            const index = row * 10 + col;
+            td.dataset.index = index;
+            td.addEventListener('click', () => handleSquareClick(index));
+            tr.appendChild(td);
+        }
+
+        tbody.appendChild(tr);
+    }
+}
+
+// Initialize zoom functionality
+function initZoom() {
+    // Zoom buttons
+    document.getElementById('zoomIn').addEventListener('click', () => zoom(0.15));
+    document.getElementById('zoomOut').addEventListener('click', () => zoom(-0.15));
+    document.getElementById('zoomReset').addEventListener('click', fitToViewport);
 
     // Mouse wheel zoom
-    viewport.addEventListener('wheel', onWheel, { passive: false });
+    scroller.addEventListener('wheel', (e) => {
+        if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            zoom(e.deltaY > 0 ? -0.1 : 0.1);
+        }
+    }, { passive: false });
 
-    // Zoom buttons
-    document.getElementById('zoomIn').addEventListener('click', () => zoomBy(0.2));
-    document.getElementById('zoomOut').addEventListener('click', () => zoomBy(-0.2));
-    document.getElementById('zoomReset').addEventListener('click', resetZoom);
+    // Pinch zoom
+    let initialDistance = 0;
+    let initialScale = 1;
 
-    // Initial fit
-    fitGridToViewport();
+    scroller.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+            initialDistance = getDistance(e.touches);
+            initialScale = scale;
+        }
+    }, { passive: true });
+
+    scroller.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            const dist = getDistance(e.touches);
+            const newScale = initialScale * (dist / initialDistance);
+            setScale(Math.max(0.5, Math.min(3, newScale)));
+        }
+    }, { passive: false });
 }
 
-function fitGridToViewport() {
-    const viewportRect = viewport.getBoundingClientRect();
-    const gridWidth = 500; // Approximate grid width
-    const gridHeight = 500; // Approximate grid height
-
-    const scaleX = viewportRect.width / gridWidth;
-    const scaleY = viewportRect.height / gridHeight;
-    scale = Math.min(scaleX, scaleY, 1) * 0.9;
-
-    panX = 0;
-    panY = 0;
-
-    applyTransform();
-}
-
-function onMouseDown(e) {
-    if (e.target.classList.contains('square')) return;
-    isDragging = true;
-    startX = e.clientX;
-    startY = e.clientY;
-    lastPanX = panX;
-    lastPanY = panY;
-    viewport.classList.add('dragging');
-}
-
-function onMouseMove(e) {
-    if (!isDragging) return;
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-    panX = lastPanX + dx;
-    panY = lastPanY + dy;
-    applyTransform();
-}
-
-function onMouseUp() {
-    isDragging = false;
-    viewport.classList.remove('dragging');
-}
-
-function onTouchStart(e) {
-    if (e.touches.length === 2) {
-        // Pinch zoom
-        e.preventDefault();
-        initialPinchDistance = getPinchDistance(e.touches);
-        initialScale = scale;
-    } else if (e.touches.length === 1) {
-        if (e.target.classList.contains('square')) return;
-        isDragging = true;
-        startX = e.touches[0].clientX;
-        startY = e.touches[0].clientY;
-        lastPanX = panX;
-        lastPanY = panY;
-    }
-}
-
-function onTouchMove(e) {
-    if (e.touches.length === 2) {
-        e.preventDefault();
-        const currentDistance = getPinchDistance(e.touches);
-        const scaleChange = currentDistance / initialPinchDistance;
-        scale = Math.max(0.5, Math.min(3, initialScale * scaleChange));
-        applyTransform();
-    } else if (e.touches.length === 1 && isDragging) {
-        const dx = e.touches[0].clientX - startX;
-        const dy = e.touches[0].clientY - startY;
-        panX = lastPanX + dx;
-        panY = lastPanY + dy;
-        applyTransform();
-    }
-}
-
-function onTouchEnd() {
-    isDragging = false;
-    initialPinchDistance = 0;
-}
-
-function getPinchDistance(touches) {
+function getDistance(touches) {
     const dx = touches[0].clientX - touches[1].clientX;
     const dy = touches[0].clientY - touches[1].clientY;
     return Math.sqrt(dx * dx + dy * dy);
 }
 
-function onWheel(e) {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? -0.1 : 0.1;
-    zoomBy(delta);
+function zoom(delta) {
+    setScale(Math.max(0.5, Math.min(3, scale + delta)));
 }
 
-function zoomBy(delta) {
-    scale = Math.max(0.5, Math.min(3, scale + delta));
-    applyTransform();
-}
-
-function resetZoom() {
-    scale = 1;
-    panX = 0;
-    panY = 0;
-    applyTransform();
-}
-
-function applyTransform() {
-    container.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+function setScale(newScale) {
+    scale = newScale;
+    table.style.transform = `scale(${scale})`;
     document.getElementById('zoomLevel').textContent = Math.round(scale * 100) + '%';
-
-    // Update sticky headers
-    updateStickyHeaders();
 }
 
-function updateStickyHeaders() {
-    // Scale the sticky headers to match
-    const patriotsCell = stickyTop.querySelector('.team-name-cell.patriots');
-    const numbersRow = stickyNumbersRow.querySelector('.numbers-row');
-    const seahawksCell = stickyLeft.querySelector('.team-name-cell.seahawks');
-    const numbersCol = stickyLeft.querySelector('.numbers-col');
+function fitToViewport() {
+    const viewport = document.getElementById('gridViewport');
+    const viewportRect = viewport.getBoundingClientRect();
 
-    if (patriotsCell) {
-        patriotsCell.style.transform = `scaleX(${scale})`;
-        patriotsCell.style.transformOrigin = 'left center';
-    }
-    if (numbersRow) {
-        numbersRow.style.transform = `scaleX(${scale})`;
-        numbersRow.style.transformOrigin = 'left center';
-    }
-    if (seahawksCell) {
-        seahawksCell.style.transform = `scaleY(${scale})`;
-        seahawksCell.style.transformOrigin = 'top center';
-    }
-    if (numbersCol) {
-        numbersCol.style.transform = `scaleY(${scale})`;
-        numbersCol.style.transformOrigin = 'top center';
-    }
+    // Get table natural size (at scale 1)
+    table.style.transform = 'scale(1)';
+    const tableRect = table.getBoundingClientRect();
 
-    // Adjust sticky positions based on pan
-    const leftOffset = 90 + panX;
-    stickyTop.style.paddingLeft = Math.max(90, leftOffset) + 'px';
-    stickyNumbersRow.style.paddingLeft = Math.max(90, leftOffset) + 'px';
+    // Calculate scale to fit
+    const scaleX = (viewportRect.width - 20) / tableRect.width;
+    const scaleY = (viewportRect.height - 20) / tableRect.height;
+    const fitScale = Math.min(scaleX, scaleY, 1.5);
 
-    const topOffset = 80 + panY;
-    stickyLeft.style.top = Math.max(80, topOffset) + 'px';
+    setScale(Math.max(0.5, fitScale));
+
+    // Center the scroll
+    scroller.scrollLeft = 0;
+    scroller.scrollTop = 0;
 }
 
 // Fetch current game state
@@ -264,7 +201,7 @@ function updateUI() {
     // Update grid
     updateGrid();
 
-    // Update numbers if assigned
+    // Update numbers
     updateNumbers();
 }
 
@@ -284,41 +221,25 @@ function updateWinnersBanner() {
     });
 }
 
-// Update grid
+// Update grid squares
 function updateGrid() {
-    const grid = document.getElementById('squaresGrid');
+    const squares = document.querySelectorAll('.square');
 
-    if (grid.children.length === 0) {
-        // Create grid for first time
-        for (let i = 0; i < 100; i++) {
-            const square = document.createElement('div');
-            square.className = 'square';
-            square.dataset.index = i;
-
-            square.addEventListener('click', (e) => {
-                e.stopPropagation();
-                handleSquareClick(i);
-            });
-
-            grid.appendChild(square);
-        }
-    }
-
-    // Update squares
     gameState.squares.forEach((player, index) => {
-        const square = grid.children[index];
+        const square = squares[index];
+        if (!square) return;
+
+        // Clear previous classes
+        square.className = 'square';
 
         if (player) {
             square.classList.add('taken', player);
             square.textContent = player;
         } else {
-            square.classList.remove('taken');
-            square.className = 'square';
             square.textContent = '';
         }
 
         // Highlight winner squares
-        square.classList.remove('winner');
         Object.values(gameState.winners).forEach(winner => {
             if (winner && winner.squareIndex === index) {
                 square.classList.add('winner');
@@ -329,35 +250,19 @@ function updateGrid() {
 
 // Update numbers
 function updateNumbers() {
-    const patriotsRow = document.getElementById('patriotsNumbers');
-    const seahawksCol = document.getElementById('seahawksNumbers');
-    const stickyPatriotsRow = document.getElementById('stickyPatriotsNumbers');
-    const stickySeahawksCol = document.getElementById('stickySeahawksNumbers');
+    // Patriots numbers (top row)
+    for (let i = 0; i < 10; i++) {
+        const cell = document.getElementById(`pn${i}`);
+        if (cell) {
+            cell.textContent = gameState.numbersAssigned ? gameState.patriotsNumbers[i] : '?';
+        }
+    }
 
-    // Get number cells
-    const patriotsCells = patriotsRow.querySelectorAll('.number-cell');
-    const seahawksCells = seahawksCol.querySelectorAll('.number-cell');
-    const stickyPatriotsCells = stickyPatriotsRow.querySelectorAll('.number-cell');
-    const stickySeahawksCells = stickySeahawksCol.querySelectorAll('.number-cell');
-
-    if (gameState.numbersAssigned) {
-        // Show actual numbers
-        gameState.patriotsNumbers.forEach((num, i) => {
-            patriotsCells[i].textContent = num;
-            stickyPatriotsCells[i].textContent = num;
-        });
-
-        gameState.seahawksNumbers.forEach((num, i) => {
-            seahawksCells[i].textContent = num;
-            stickySeahawksCells[i].textContent = num;
-        });
-    } else {
-        // Show question marks
-        for (let i = 0; i < 10; i++) {
-            patriotsCells[i].textContent = '?';
-            seahawksCells[i].textContent = '?';
-            stickyPatriotsCells[i].textContent = '?';
-            stickySeahawksCells[i].textContent = '?';
+    // Seahawks numbers (left column)
+    for (let i = 0; i < 10; i++) {
+        const cell = document.getElementById(`sn${i}`);
+        if (cell) {
+            cell.textContent = gameState.numbersAssigned ? gameState.seahawksNumbers[i] : '?';
         }
     }
 }
@@ -473,11 +378,11 @@ document.getElementById('adminToggle').addEventListener('click', () => {
 
     if (adminMode) {
         btn.classList.add('active');
-        btn.textContent = 'Exit Admin Mode';
+        btn.textContent = 'Exit Admin';
         panel.style.display = 'block';
     } else {
         btn.classList.remove('active');
-        btn.textContent = 'Admin';
+        btn.textContent = '⚙️ Admin';
         panel.style.display = 'none';
         selectedQuarter = null;
         document.querySelectorAll('.quarter-btn').forEach(b =>
