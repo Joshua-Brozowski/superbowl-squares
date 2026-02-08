@@ -411,5 +411,38 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
     window.location.href = 'index.html';
 });
 
+// Reset Board
+document.getElementById('resetBoardBtn').addEventListener('click', async () => {
+    const firstConfirm = confirm('Are you sure you want to RESET THE ENTIRE BOARD?\n\nThis will clear ALL selections from ALL players!');
+    if (!firstConfirm) return;
+
+    const secondConfirm = confirm('THIS CANNOT BE UNDONE!\n\nType "RESET" in the next prompt to confirm.');
+    if (!secondConfirm) return;
+
+    const typed = prompt('Type RESET to confirm:');
+    if (typed !== 'RESET') {
+        alert('Reset cancelled - you did not type RESET correctly.');
+        return;
+    }
+
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'reset' })
+        });
+
+        if (response.ok) {
+            alert('Board has been reset!');
+            window.location.reload();
+        } else {
+            alert('Failed to reset board.');
+        }
+    } catch (error) {
+        console.error('Error resetting board:', error);
+        alert('Failed to reset board.');
+    }
+});
+
 // Initialize on load
 init();

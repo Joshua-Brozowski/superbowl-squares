@@ -509,6 +509,28 @@ thead tr:nth-child(2) th.corner-cell {
     margin: 0;
 }
 
+.reset-board-btn {
+    width: 100%;
+    margin-top: 12px;
+    padding: 12px 20px;
+    font-size: 1rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+    border: none;
+    background: #dc3545;
+    color: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+}
+
+.reset-board-btn:hover {
+    background: #c82333;
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+}
+
 /* Responsive */
 @media (max-width: 500px) {
     .game-container {
