@@ -265,6 +265,43 @@ export default async function handler(req, res) {
       return res.json({ success: true });
     }
 
+    // Chat messages
+    const MESSAGES_KEY = 'superbowl2026_messages';
+
+    // Get messages
+    if (action === 'getMessages') {
+      const messages = await kv.get(MESSAGES_KEY) || [];
+      return res.json({ messages });
+    }
+
+    // Post a message
+    if (action === 'postMessage') {
+      const { author, text } = req.body;
+
+      if (!author || !text || text.trim().length === 0) {
+        return res.status(400).json({ error: 'Author and text are required' });
+      }
+
+      const messages = await kv.get(MESSAGES_KEY) || [];
+
+      const newMessage = {
+        id: Date.now().toString(),
+        author,
+        text: text.trim().substring(0, 500), // Limit to 500 chars
+        timestamp: new Date().toISOString()
+      };
+
+      messages.push(newMessage);
+
+      // Keep only last 100 messages
+      if (messages.length > 100) {
+        messages.splice(0, messages.length - 100);
+      }
+
+      await kv.set(MESSAGES_KEY, messages);
+      return res.json({ success: true, message: newMessage });
+    }
+
     res.status(400).json({ error: 'Invalid action' });
 
   } catch (error) {

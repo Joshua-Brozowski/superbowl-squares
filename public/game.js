@@ -609,5 +609,36 @@ document.getElementById('resetBoardBtn').addEventListener('click', async () => {
     }
 });
 
+// Check for unread chat messages
+async function checkUnreadMessages() {
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'getMessages' })
+        });
+        const data = await response.json();
+        const messages = data.messages || [];
+
+        const lastReadTime = parseInt(localStorage.getItem('lastReadMessageTime') || '0');
+        const notification = document.getElementById('chatNotification');
+
+        // Check if there are any messages newer than our last read time
+        const hasUnread = messages.some(msg => new Date(msg.timestamp).getTime() > lastReadTime);
+
+        if (hasUnread) {
+            notification.style.display = 'block';
+        } else {
+            notification.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error checking messages:', error);
+    }
+}
+
+// Check for unread messages every 5 seconds
+setInterval(checkUnreadMessages, 5000);
+checkUnreadMessages();
+
 // Initialize on load
 init();

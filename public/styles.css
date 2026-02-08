@@ -226,6 +226,39 @@ body {
     border-color: #FF5722;
 }
 
+.chat-btn {
+    padding: 6px 10px;
+    font-size: clamp(0.65rem, 1.6vw, 0.8rem);
+    border: 2px solid #fff;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    position: relative;
+}
+
+.chat-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.chat-notification {
+    width: 10px;
+    height: 10px;
+    background: #FF5252;
+    border-radius: 50%;
+    animation: pulse-notification 1.5s infinite;
+}
+
+@keyframes pulse-notification {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.8; }
+}
+
 /* Instructions */
 .instructions {
     background: rgba(255, 255, 255, 0.1);

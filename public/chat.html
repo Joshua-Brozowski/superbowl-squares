@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Bowl LX - Chat</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 10px;
+            gap: 10px;
+        }
+
+        .chat-header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 12px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .chat-header h1 {
+            font-size: 1.3rem;
+            margin: 0;
+        }
+
+        .back-btn {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            border: 2px solid #fff;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .messages-container {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 0;
+        }
+
+        .message {
+            padding: 10px 14px;
+            border-radius: 12px;
+            max-width: 85%;
+            word-wrap: break-word;
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+            font-size: 0.75rem;
+        }
+
+        .message-author {
+            font-weight: bold;
+            color: #002244;
+        }
+
+        .message-time {
+            color: #666;
+            font-size: 0.7rem;
+        }
+
+        .message-text {
+            color: #333;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .message.Joshua { background: #FFE5E5; border-left: 4px solid #FF5252; }
+        .message.AJ { background: #E3F2FD; border-left: 4px solid #448AFF; }
+        .message.Sharon { background: #E8F5E9; border-left: 4px solid #69F0AE; }
+        .message.Jim { background: #FFF8E1; border-left: 4px solid #FFD740; }
+        .message.Patia { background: #F3E5F5; border-left: 4px solid #E040FB; }
+        .message.Kim { background: #FBE9E7; border-left: 4px solid #FF6E40; }
+
+        .message-input-container {
+            display: flex;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 12px 16px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            outline: none;
+        }
+
+        .message-input:focus {
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.5);
+        }
+
+        .send-btn {
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            background: #FFD700;
+            color: #002244;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .send-btn:hover {
+            background: #FFC107;
+            transform: scale(1.05);
+        }
+
+        .send-btn:disabled {
+            background: #666;
+            color: #999;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .empty-chat {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+            font-size: 1.1rem;
+        }
+
+        .current-user {
+            color: #FFD700;
+            font-weight: bold;
+        }
+
+        @media (max-width: 500px) {
+            .chat-header h1 {
+                font-size: 1.1rem;
+            }
+
+            .message {
+                max-width: 90%;
+            }
+
+            .message-input {
+                padding: 10px 14px;
+                font-size: 0.9rem;
+            }
+
+            .send-btn {
+                padding: 10px 18px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>💬 Message Board</h1>
+            <span class="current-user" id="currentUser"></span>
+            <a href="game.html" class="back-btn">← Back to Game</a>
+        </div>
+
+        <div class="messages-container" id="messagesContainer">
+            <div class="empty-chat">No messages yet. Be the first to say something!</div>
+        </div>
+
+        <div class="message-input-container">
+            <input type="text" class="message-input" id="messageInput" placeholder="Type a message..." maxlength="500">
+            <button class="send-btn" id="sendBtn">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const currentPlayer = localStorage.getItem('player');
+        if (!currentPlayer) {
+            window.location.href = 'index.html';
+        }
+
+        document.getElementById('currentUser').textContent = currentPlayer;
+
+        const API_URL = '/api';
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+
+        let messages = [];
+
+        // Load messages
+        async function loadMessages() {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'getMessages' })
+                });
+                const data = await response.json();
+                messages = data.messages || [];
+                renderMessages();
+
+                // Mark as read
+                localStorage.setItem('lastReadMessageTime', Date.now().toString());
+            } catch (error) {
+                console.error('Error loading messages:', error);
+            }
+        }
+
+        // Render messages
+        function renderMessages() {
+            if (messages.length === 0) {
+                messagesContainer.innerHTML = '<div class="empty-chat">No messages yet. Be the first to say something!</div>';
+                return;
+            }
+
+            messagesContainer.innerHTML = messages.map(msg => {
+                const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const date = new Date(msg.timestamp).toLocaleDateString();
+                const today = new Date().toLocaleDateString();
+                const displayTime = date === today ? time : `${date} ${time}`;
+
+                return `
+                    <div class="message ${msg.author}">
+                        <div class="message-header">
+                            <span class="message-author">${msg.author}</span>
+                            <span class="message-time">${displayTime}</span>
+                        </div>
+                        <div class="message-text">${escapeHtml(msg.text)}</div>
+                    </div>
+                `;
+            }).join('');
+
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Send message
+        async function sendMessage() {
+            const text = messageInput.value.trim();
+            if (!text) return;
+
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Sending...';
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'postMessage',
+                        author: currentPlayer,
+                        text: text
+                    })
+                });
+
+                if (response.ok) {
+                    messageInput.value = '';
+                    await loadMessages();
+                } else {
+                    alert('Failed to send message');
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+                alert('Failed to send message');
+            }
+
+            sendBtn.disabled = false;
+            sendBtn.textContent = 'Send';
+        }
+
+        // Event listeners
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Initial load
+        loadMessages();
+
+        // Poll for new messages every 3 seconds
+        setInterval(loadMessages, 3000);
+    </script>
+</body>
+</html>
