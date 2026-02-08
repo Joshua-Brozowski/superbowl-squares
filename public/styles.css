@@ -172,6 +172,12 @@ body {
     font-weight: bold;
 }
 
+.winner-score {
+    color: #fff;
+    font-size: clamp(0.7rem, 1.8vw, 0.9rem);
+    font-weight: bold;
+}
+
 .winner-name {
     color: #FFD700;
     font-weight: bold;
@@ -527,6 +533,107 @@ thead tr:nth-child(2) th.corner-cell {
     color: #FFD700;
     font-size: clamp(0.65rem, 1.6vw, 0.8rem);
     margin: 0;
+}
+
+.admin-section {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+}
+
+.admin-section h3 {
+    margin-bottom: 8px;
+    color: #FFD700;
+    font-size: clamp(0.8rem, 2vw, 1rem);
+}
+
+.player-status {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.player-status-item {
+    padding: 6px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    text-align: center;
+}
+
+.player-status-item.complete {
+    background: #00C853;
+    color: #fff;
+}
+
+.player-status-item.incomplete {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+.lock-board-btn {
+    width: 100%;
+    padding: 10px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    border: none;
+    background: #FF9800;
+    color: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.lock-board-btn:hover {
+    background: #F57C00;
+}
+
+.lock-board-btn.locked {
+    background: #4CAF50;
+}
+
+.score-inputs {
+    margin: 10px 0;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+}
+
+.score-input-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.score-input-row label {
+    font-size: 0.85rem;
+}
+
+.score-input-row input {
+    width: 50px;
+    padding: 5px;
+    font-size: 0.9rem;
+    border: none;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.set-score-btn {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    border: none;
+    background: #2196F3;
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.set-score-btn:hover {
+    background: #1976D2;
 }
 
 .reset-board-btn {

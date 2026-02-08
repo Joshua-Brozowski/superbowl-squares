@@ -19,7 +19,7 @@ export default async function handler(req, res) {
     // Initialize game state
     if (action === 'init') {
       const existingGame = await kv.get(GAME_KEY);
-      
+
       if (!existingGame) {
         const gameState = {
           gameId: 'superbowl2026',
@@ -41,51 +41,91 @@ export default async function handler(req, res) {
             Q3: null,
             Final: null
           },
+          scores: {
+            Q1: { patriots: null, seahawks: null },
+            Q2: { patriots: null, seahawks: null },
+            Q3: { patriots: null, seahawks: null },
+            Final: { patriots: null, seahawks: null }
+          },
+          locked: false,
           lastUpdated: new Date().toISOString()
         };
         await kv.set(GAME_KEY, gameState);
         return res.json(gameState);
       }
+
+      // Ensure existing games have new fields
+      if (existingGame.scores === undefined) {
+        existingGame.scores = {
+          Q1: { patriots: null, seahawks: null },
+          Q2: { patriots: null, seahawks: null },
+          Q3: { patriots: null, seahawks: null },
+          Final: { patriots: null, seahawks: null }
+        };
+      }
+      if (existingGame.locked === undefined) {
+        existingGame.locked = false;
+      }
+
       return res.json(existingGame);
     }
 
     // Get game state
     if (action === 'getState') {
       const game = await kv.get(GAME_KEY);
+      if (game) {
+        // Ensure new fields exist
+        if (game.scores === undefined) {
+          game.scores = {
+            Q1: { patriots: null, seahawks: null },
+            Q2: { patriots: null, seahawks: null },
+            Q3: { patriots: null, seahawks: null },
+            Final: { patriots: null, seahawks: null }
+          };
+        }
+        if (game.locked === undefined) {
+          game.locked = false;
+        }
+      }
       return res.json(game || {});
     }
 
     // Pick a square
     if (action === 'pickSquare') {
       const { squareIndex, player } = req.body;
-      
+
       const game = await kv.get(GAME_KEY);
-      
+
+      // Check if board is locked
+      if (game.locked) {
+        return res.status(400).json({ error: 'Board is locked! No changes allowed.' });
+      }
+
       // If clicking own square, deselect it
       if (game.squares[squareIndex] === player) {
         game.squares[squareIndex] = null;
         game.players[player]--;
         game.lastUpdated = new Date().toISOString();
-        
+
         await kv.set(GAME_KEY, game);
         return res.json(game);
       }
-      
+
       // Check if square is taken by someone else
       if (game.squares[squareIndex] !== null) {
         return res.status(400).json({ error: 'Square already taken!' });
       }
-      
+
       // Check if player has reached limit (16 squares)
       if (game.players[player] >= 16) {
         return res.status(400).json({ error: 'You have already picked 16 squares!' });
       }
-      
+
       // Update square and player count
       game.squares[squareIndex] = player;
       game.players[player]++;
       game.lastUpdated = new Date().toISOString();
-      
+
       // Reveal numbers when any player reaches 11 squares (5 remaining)
       if (!game.numbersAssigned) {
         const anyoneAt11OrMore = Object.values(game.players).some(count => count >= 11);
@@ -96,7 +136,7 @@ export default async function handler(req, res) {
           game.numbersRevealedEarly = true;
         }
       }
-      
+
       // Check if all 96 squares are filled
       const filledSquares = game.squares.filter(s => s !== null).length;
       if (filledSquares === 96 && !game.numbersAssigned) {
@@ -104,7 +144,50 @@ export default async function handler(req, res) {
         game.seahawksNumbers = shuffleArray([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
         game.numbersAssigned = true;
       }
-      
+
+      await kv.set(GAME_KEY, game);
+      return res.json(game);
+    }
+
+    // Lock board
+    if (action === 'lockBoard') {
+      const game = await kv.get(GAME_KEY);
+      game.locked = true;
+      game.lastUpdated = new Date().toISOString();
+      await kv.set(GAME_KEY, game);
+      return res.json(game);
+    }
+
+    // Unlock board
+    if (action === 'unlockBoard') {
+      const game = await kv.get(GAME_KEY);
+      game.locked = false;
+      game.lastUpdated = new Date().toISOString();
+      await kv.set(GAME_KEY, game);
+      return res.json(game);
+    }
+
+    // Set score for a quarter
+    if (action === 'setScore') {
+      const { quarter, patriots, seahawks } = req.body;
+
+      const game = await kv.get(GAME_KEY);
+
+      if (!game.scores) {
+        game.scores = {
+          Q1: { patriots: null, seahawks: null },
+          Q2: { patriots: null, seahawks: null },
+          Q3: { patriots: null, seahawks: null },
+          Final: { patriots: null, seahawks: null }
+        };
+      }
+
+      game.scores[quarter] = {
+        patriots: patriots !== undefined ? patriots : null,
+        seahawks: seahawks !== undefined ? seahawks : null
+      };
+      game.lastUpdated = new Date().toISOString();
+
       await kv.set(GAME_KEY, game);
       return res.json(game);
     }
@@ -112,12 +195,12 @@ export default async function handler(req, res) {
     // Set winner
     if (action === 'setWinner') {
       const { quarter, squareIndex } = req.body;
-      
+
       const game = await kv.get(GAME_KEY);
       const player = game.squares[squareIndex];
       game.winners[quarter] = { player, squareIndex };
       game.lastUpdated = new Date().toISOString();
-      
+
       await kv.set(GAME_KEY, game);
       return res.json(game);
     }
@@ -125,11 +208,11 @@ export default async function handler(req, res) {
     // Clear winner
     if (action === 'clearWinner') {
       const { quarter } = req.body;
-      
+
       const game = await kv.get(GAME_KEY);
       game.winners[quarter] = null;
       game.lastUpdated = new Date().toISOString();
-      
+
       await kv.set(GAME_KEY, game);
       return res.json(game);
     }

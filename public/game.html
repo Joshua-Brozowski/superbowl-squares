@@ -17,18 +17,22 @@
             <div class="winners-banner" id="winnersBanner">
                 <div class="winner-item">
                     <div class="winner-label">Q1</div>
+                    <div class="winner-score" id="q1Score">-</div>
                     <div class="winner-name" id="q1Winner">-</div>
                 </div>
                 <div class="winner-item">
                     <div class="winner-label">Q2</div>
+                    <div class="winner-score" id="q2Score">-</div>
                     <div class="winner-name" id="q2Winner">-</div>
                 </div>
                 <div class="winner-item">
                     <div class="winner-label">Q3</div>
+                    <div class="winner-score" id="q3Score">-</div>
                     <div class="winner-name" id="q3Winner">-</div>
                 </div>
                 <div class="winner-item">
                     <div class="winner-label">Final</div>
+                    <div class="winner-score" id="finalScore">-</div>
                     <div class="winner-name" id="finalWinner">-</div>
                 </div>
             </div>
@@ -46,14 +50,30 @@
         </div>
 
         <div id="adminPanel" class="admin-panel" style="display: none;">
-            <h3>Select Quarter</h3>
-            <div class="quarter-buttons">
-                <button class="quarter-btn" data-quarter="Q1">Q1</button>
-                <button class="quarter-btn" data-quarter="Q2">Q2</button>
-                <button class="quarter-btn" data-quarter="Q3">Q3</button>
-                <button class="quarter-btn" data-quarter="Final">Final</button>
+            <div class="admin-section">
+                <h3>Player Status</h3>
+                <div id="playerStatus" class="player-status"></div>
+                <button id="lockBoardBtn" class="lock-board-btn">LOCK BOARD</button>
             </div>
-            <p class="admin-instruction">Click a square to mark as winner</p>
+
+            <div class="admin-section">
+                <h3>Set Score & Winner</h3>
+                <div class="quarter-buttons">
+                    <button class="quarter-btn" data-quarter="Q1">Q1</button>
+                    <button class="quarter-btn" data-quarter="Q2">Q2</button>
+                    <button class="quarter-btn" data-quarter="Q3">Q3</button>
+                    <button class="quarter-btn" data-quarter="Final">Final</button>
+                </div>
+                <div id="scoreInputs" class="score-inputs" style="display: none;">
+                    <div class="score-input-row">
+                        <label>Patriots: <input type="number" id="patriotsScoreInput" min="0" max="99"></label>
+                        <label>Seahawks: <input type="number" id="seahawksScoreInput" min="0" max="99"></label>
+                        <button id="setScoreBtn" class="set-score-btn">Set Score</button>
+                    </div>
+                </div>
+                <p class="admin-instruction">Click a square to mark as winner for selected quarter</p>
+            </div>
+
             <button id="resetBoardBtn" class="reset-board-btn">RESET ENTIRE BOARD</button>
         </div>
 

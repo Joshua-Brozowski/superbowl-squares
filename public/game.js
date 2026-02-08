@@ -35,6 +35,7 @@ async function init() {
         buildGrid();
         updateUI();
         initZoom();
+        initAdminControls();
         fitToViewport();
 
         // Poll for updates every 2 seconds
@@ -88,6 +89,92 @@ function buildGrid() {
         }
 
         tbody.appendChild(tr);
+    }
+}
+
+// Initialize admin controls
+function initAdminControls() {
+    // Lock/Unlock board button
+    document.getElementById('lockBoardBtn').addEventListener('click', toggleBoardLock);
+
+    // Score input button
+    document.getElementById('setScoreBtn').addEventListener('click', setScore);
+
+    // Show score inputs when quarter selected
+    document.querySelectorAll('.quarter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.quarter-btn').forEach(b =>
+                b.classList.remove('selected')
+            );
+            btn.classList.add('selected');
+            selectedQuarter = btn.dataset.quarter;
+
+            // Show score inputs and populate current values
+            document.getElementById('scoreInputs').style.display = 'block';
+            const scores = gameState.scores && gameState.scores[selectedQuarter];
+            document.getElementById('patriotsScoreInput').value = scores?.patriots ?? '';
+            document.getElementById('seahawksScoreInput').value = scores?.seahawks ?? '';
+        });
+    });
+}
+
+// Toggle board lock
+async function toggleBoardLock() {
+    const action = gameState.locked ? 'unlockBoard' : 'lockBoard';
+
+    if (!gameState.locked) {
+        // Check if everyone has 16 squares
+        const allComplete = Object.values(gameState.players).every(count => count === 16);
+        if (!allComplete) {
+            const proceed = confirm('Not everyone has picked 16 squares yet. Lock anyway?');
+            if (!proceed) return;
+        }
+    }
+
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action })
+        });
+
+        gameState = await response.json();
+        updateUI();
+        alert(gameState.locked ? 'Board is now LOCKED!' : 'Board is now UNLOCKED!');
+    } catch (error) {
+        console.error('Error toggling lock:', error);
+        alert('Failed to toggle board lock.');
+    }
+}
+
+// Set score for selected quarter
+async function setScore() {
+    if (!selectedQuarter) {
+        alert('Please select a quarter first!');
+        return;
+    }
+
+    const patriots = parseInt(document.getElementById('patriotsScoreInput').value) || 0;
+    const seahawks = parseInt(document.getElementById('seahawksScoreInput').value) || 0;
+
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'setScore',
+                quarter: selectedQuarter,
+                patriots,
+                seahawks
+            })
+        });
+
+        gameState = await response.json();
+        updateUI();
+        alert(`Score set for ${selectedQuarter}: Patriots ${patriots} - Seahawks ${seahawks}`);
+    } catch (error) {
+        console.error('Error setting score:', error);
+        alert('Failed to set score.');
     }
 }
 
@@ -209,20 +296,62 @@ function updateUI() {
 
     // Update numbers
     updateNumbers();
+
+    // Update admin panel if visible
+    if (adminMode) {
+        updateAdminPanel();
+    }
+}
+
+// Update admin panel
+function updateAdminPanel() {
+    // Update player status
+    const statusDiv = document.getElementById('playerStatus');
+    statusDiv.innerHTML = '';
+
+    Object.entries(gameState.players).forEach(([name, count]) => {
+        const item = document.createElement('div');
+        item.className = `player-status-item ${count === 16 ? 'complete' : 'incomplete'}`;
+        item.textContent = `${name}: ${count}/16`;
+        statusDiv.appendChild(item);
+    });
+
+    // Update lock button
+    const lockBtn = document.getElementById('lockBoardBtn');
+    if (gameState.locked) {
+        lockBtn.textContent = 'UNLOCK BOARD';
+        lockBtn.classList.add('locked');
+    } else {
+        lockBtn.textContent = 'LOCK BOARD';
+        lockBtn.classList.remove('locked');
+    }
 }
 
 // Update winners banner
 function updateWinnersBanner() {
     ['Q1', 'Q2', 'Q3', 'Final'].forEach(quarter => {
         const winner = gameState.winners[quarter];
-        const element = document.getElementById(quarter.toLowerCase() + 'Winner');
+        const scores = gameState.scores && gameState.scores[quarter];
 
+        const winnerElement = document.getElementById(quarter.toLowerCase() + 'Winner');
+        const scoreElement = document.getElementById(quarter.toLowerCase() + 'Score');
+
+        // Update score display
+        if (scoreElement) {
+            if (scores && (scores.patriots !== null || scores.seahawks !== null)) {
+                scoreElement.textContent = `${scores.patriots ?? 0}-${scores.seahawks ?? 0}`;
+            } else {
+                scoreElement.textContent = '-';
+            }
+        }
+
+        // Update winner display
         if (winner) {
-            element.textContent = winner.player;
-            element.style.color = '#FFD700';
+            winnerElement.textContent = winner.player;
+            winnerElement.style.color = '#FFD700';
         } else {
-            element.textContent = '-';
-            element.style.color = '#fff';
+            winnerElement.textContent = '-';
+            winnerElement.style.color = '#fff';
         }
     });
 }
@@ -322,6 +451,12 @@ async function handleSquareClick(index) {
             alert('Failed to set winner. Please try again.');
         }
     } else {
+        // Check if board is locked
+        if (gameState.locked) {
+            alert('Board is locked! No changes allowed.');
+            return;
+        }
+
         // Normal mode - pick/unpick square
         const squareOwner = gameState.squares[index];
 
@@ -388,6 +523,7 @@ document.getElementById('adminToggle').addEventListener('click', () => {
         btn.classList.add('active');
         btn.textContent = 'Exit Admin';
         panel.style.display = 'block';
+        updateAdminPanel();
     } else {
         btn.classList.remove('active');
         btn.textContent = '⚙️ Admin';
@@ -396,18 +532,8 @@ document.getElementById('adminToggle').addEventListener('click', () => {
         document.querySelectorAll('.quarter-btn').forEach(b =>
             b.classList.remove('selected')
         );
+        document.getElementById('scoreInputs').style.display = 'none';
     }
-});
-
-// Quarter selection
-document.querySelectorAll('.quarter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('.quarter-btn').forEach(b =>
-            b.classList.remove('selected')
-        );
-        btn.classList.add('selected');
-        selectedQuarter = btn.dataset.quarter;
-    });
 });
 
 // Logout
