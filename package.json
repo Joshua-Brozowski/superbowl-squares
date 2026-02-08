@@ -8,7 +8,7 @@
     "build": "echo 'Build complete'"
   },
   "dependencies": {
-    "mongodb": "^6.3.0"
+    "@vercel/kv": "^2.0.0"
   },
   "engines": {
     "node": ">=18.x"
