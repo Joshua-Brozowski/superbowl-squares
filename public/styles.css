@@ -346,6 +346,12 @@ tbody tr td.row-number-cell {
     z-index: 110;
 }
 
+.grid-spacer {
+    width: 8px;
+    min-width: 8px;
+    background: #f5f5f5;
+}
+
 .team-header {
     height: 28px;
     font-weight: bold;

@@ -72,6 +72,11 @@ function buildGrid() {
         numCell.textContent = '?';
         tr.appendChild(numCell);
 
+        // Spacer cell between numbers and squares
+        const spacer = document.createElement('td');
+        spacer.className = 'grid-spacer';
+        tr.appendChild(spacer);
+
         // 10 square cells
         for (let col = 0; col < 10; col++) {
             const td = document.createElement('td');
