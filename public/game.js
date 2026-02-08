@@ -224,13 +224,13 @@ function updateWinnersBanner() {
 
 // Update grid squares
 function updateGrid() {
-    const squares = document.querySelectorAll('.square');
+    const squares = document.querySelectorAll('td.square');
 
     gameState.squares.forEach((player, index) => {
         const square = squares[index];
         if (!square) return;
 
-        // Clear previous classes
+        // Clear previous classes but keep 'square'
         square.className = 'square';
 
         if (player) {
