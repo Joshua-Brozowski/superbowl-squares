@@ -38,8 +38,8 @@ async function init() {
         initAdminControls();
         fitToViewport();
 
-        // Poll for updates every 2 seconds
-        setInterval(fetchGameState, 2000);
+        // Poll for updates every 1.5 seconds for faster sync
+        setInterval(fetchGameState, 1500);
 
         // Refit on resize
         window.addEventListener('resize', fitToViewport);
@@ -406,6 +406,71 @@ function updateNumbers() {
     }
 }
 
+// Pick square with retry logic for version conflicts
+async function pickSquareWithRetry(index, player, maxRetries) {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'pickSquare',
+                    squareIndex: index,
+                    player: player,
+                    expectedVersion: gameState.version
+                })
+            });
+
+            const result = await response.json();
+
+            // Handle version conflict - update state and retry
+            if (response.status === 409 && result.code === 'VERSION_CONFLICT') {
+                console.log(`Version conflict, retrying (attempt ${attempt + 1}/${maxRetries})`);
+                gameState = result.currentState;
+                updateUI();
+
+                // Check if square is still available
+                if (gameState.squares[index] !== null && gameState.squares[index] !== player) {
+                    alert(`Square was just taken by ${gameState.squares[index]}!`);
+                    return;
+                }
+
+                // Small delay before retry
+                await new Promise(resolve => setTimeout(resolve, 100));
+                continue;
+            }
+
+            if (!response.ok) {
+                // Update state if server sent it
+                if (result.currentState) {
+                    gameState = result.currentState;
+                    updateUI();
+                }
+                alert(result.error || 'Failed to pick square');
+                return;
+            }
+
+            // Success!
+            const myNewCount = result.players[player] || 0;
+            const myOldCount = gameState.players[player] || 0;
+            if (result.numbersAssigned && myNewCount >= 11 && myOldCount < 11) {
+                alert('Numbers revealed! You have 11+ squares - time to strategize your final 5 picks!');
+            }
+
+            gameState = result;
+            lastNumbersAssignedState = gameState.numbersAssigned;
+            updateUI();
+            return;
+
+        } catch (error) {
+            console.error('Error picking square:', error);
+            if (attempt === maxRetries - 1) {
+                alert('Failed to pick square. Please try again.');
+            }
+        }
+    }
+}
+
 // Handle square click
 async function handleSquareClick(index) {
     if (adminMode) {
@@ -477,39 +542,8 @@ async function handleSquareClick(index) {
             return;
         }
 
-        try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'pickSquare',
-                    squareIndex: index,
-                    player: currentPlayer
-                })
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                alert(error.error || 'Failed to pick square');
-                return;
-            }
-
-            const newState = await response.json();
-
-            // Check if THIS player just hit 11 squares and can now see numbers
-            const myNewCount = newState.players[currentPlayer] || 0;
-            const myOldCount = gameState.players[currentPlayer] || 0;
-            if (newState.numbersAssigned && myNewCount >= 11 && myOldCount < 11) {
-                alert('Numbers revealed! You have 11+ squares - time to strategize your final 5 picks!');
-            }
-
-            gameState = newState;
-            lastNumbersAssignedState = gameState.numbersAssigned;
-            updateUI();
-        } catch (error) {
-            console.error('Error picking square:', error);
-            alert('Failed to pick square. Please try again.');
-        }
+        // Try to pick square with retry logic for conflicts
+        await pickSquareWithRetry(index, currentPlayer, 3);
     }
 }
 
