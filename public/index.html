@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Bowl LX Squares - Login</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="login-page">
+    <div class="login-container">
+        <div class="logo-container">
+            <h1>🏈 SUPER BOWL LX</h1>
+            <h2>Patriots vs Seahawks</h2>
+            <p class="game-date">February 8, 2026</p>
+        </div>
+        
+        <div class="login-box">
+            <h3>Select Your Name</h3>
+            <div class="player-buttons">
+                <button class="player-btn" data-player="Joshua">Joshua</button>
+                <button class="player-btn" data-player="AJ">AJ</button>
+                <button class="player-btn" data-player="Sharon">Sharon</button>
+                <button class="player-btn" data-player="Jim">Jim</button>
+                <button class="player-btn" data-player="Patia">Patia</button>
+                <button class="player-btn" data-player="Kim">Kim</button>
+            </div>
+            
+            <button id="enterBtn" class="enter-btn" disabled>ENTER</button>
+        </div>
+    </div>
+
+    <script>
+        let selectedPlayer = null;
+
+        document.querySelectorAll('.player-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active class from all buttons
+                document.querySelectorAll('.player-btn').forEach(b => b.classList.remove('active'));
+                
+                // Add active class to clicked button
+                btn.classList.add('active');
+                selectedPlayer = btn.dataset.player;
+                
+                // Enable enter button
+                document.getElementById('enterBtn').disabled = false;
+            });
+        });
+
+        document.getElementById('enterBtn').addEventListener('click', () => {
+            if (selectedPlayer) {
+                localStorage.setItem('player', selectedPlayer);
+                window.location.href = 'game.html';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,455 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #002244 0%, #004488 100%);
+    min-height: 100vh;
+    color: #fff;
+}
+
+/* Login Page */
+.login-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.login-container {
+    text-align: center;
+    max-width: 600px;
+    width: 100%;
+}
+
+.logo-container {
+    margin-bottom: 40px;
+}
+
+.logo-container h1 {
+    font-size: clamp(2rem, 6vw, 3rem);
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.logo-container h2 {
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    color: #FFD700;
+}
+
+.game-date {
+    font-size: clamp(1rem, 3vw, 1.2rem);
+    margin-top: 10px;
+    opacity: 0.9;
+}
+
+.login-box {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+.login-box h3 {
+    font-size: 1.5rem;
+    margin-bottom: 30px;
+}
+
+.player-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.player-btn {
+    padding: 20px;
+    font-size: 1.2rem;
+    border: 2px solid #fff;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.player-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.player-btn.active {
+    background: #FFD700;
+    color: #002244;
+    border-color: #FFD700;
+    transform: scale(1.05);
+}
+
+.enter-btn {
+    width: 100%;
+    padding: 20px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    border: none;
+    background: #00C853;
+    color: #fff;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.enter-btn:disabled {
+    background: #666;
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.enter-btn:not(:disabled):hover {
+    background: #00E676;
+    transform: translateY(-2px);
+}
+
+/* Game Page */
+.game-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 10px;
+}
+
+.header {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+.logo {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.logo h1 {
+    font-size: clamp(1.2rem, 4vw, 2rem);
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    line-height: 1.2;
+    margin-bottom: 2px;
+}
+
+.logo p {
+    font-size: clamp(0.75rem, 2.5vw, 1rem);
+    color: #FFD700;
+    margin: 0;
+}
+
+.winners-banner {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.winner-item {
+    text-align: center;
+    padding: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    font-size: clamp(0.7rem, 2vw, 0.9rem);
+}
+
+.winner-label {
+    font-weight: bold;
+}
+
+.winner-name {
+    color: #FFD700;
+    font-weight: bold;
+    font-size: clamp(0.65rem, 1.8vw, 0.85rem);
+}
+
+.controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: clamp(0.75rem, 2vw, 1rem);
+}
+
+.player-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.square-count {
+    color: #FFD700;
+}
+
+.button-group {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.admin-toggle, .logout-btn {
+    padding: 8px 12px;
+    font-size: clamp(0.7rem, 1.8vw, 0.85rem);
+    border: 2px solid #fff;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.admin-toggle:hover, .logout-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.admin-toggle.active {
+    background: #FF5722;
+    border-color: #FF5722;
+}
+
+.grid-wrapper {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    overflow-x: auto;
+}
+
+.grid-container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+}
+
+.team-label {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    z-index: 10;
+}
+
+.team-label-top {
+    top: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.team-label-left {
+    left: -90px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.arrow {
+    font-size: 1.5rem;
+    color: #002244;
+}
+
+.team-name {
+    background: linear-gradient(135deg, #FFD700, #FFA000);
+    padding: 4px 12px;
+    border-radius: 6px;
+    color: #002244;
+    font-size: clamp(0.8rem, 2.2vw, 1.1rem);
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.vertical {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    padding: 8px 6px;
+    letter-spacing: 1px;
+}
+
+.numbers-row {
+    display: grid;
+    grid-template-columns: 40px repeat(10, 40px);
+    gap: 2px;
+    margin-bottom: 2px;
+}
+
+.corner-cell {
+    width: 40px;
+    height: 40px;
+}
+
+.number-cell {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #FFD700;
+    color: #002244;
+    font-weight: bold;
+    font-size: clamp(0.85rem, 2.2vw, 1.1rem);
+    border-radius: 4px;
+}
+
+.grid-with-numbers {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 2px;
+}
+
+.numbers-col {
+    display: grid;
+    grid-template-rows: repeat(10, 40px);
+    gap: 2px;
+}
+
+.squares-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 40px);
+    grid-template-rows: repeat(10, 40px);
+    gap: 2px;
+}
+
+.square {
+    width: 40px;
+    height: 40px;
+    background: #fff;
+    border: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: clamp(0.5rem, 1.5vw, 0.65rem);
+    font-weight: bold;
+    color: #002244;
+    border-radius: 3px;
+}
+
+.square:hover:not(.taken) {
+    background: #e3f2fd;
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.square.taken {
+    cursor: pointer; /* Still clickable for deselection */
+}
+
+.square.Joshua { background: #FF5252; color: #fff; }
+.square.AJ { background: #448AFF; color: #fff; }
+.square.Sharon { background: #69F0AE; color: #002244; }
+.square.Jim { background: #FFD740; color: #002244; }
+.square.Patia { background: #E040FB; color: #fff; }
+.square.Kim { background: #FF6E40; color: #fff; }
+
+.square.winner {
+    animation: pulse 1s infinite;
+    border: 3px solid #FFD700;
+    box-shadow: 0 0 15px #FFD700;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.instructions {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 10px;
+    border-radius: 10px;
+}
+
+.instructions h3 {
+    margin-bottom: 8px;
+    color: #FFD700;
+    font-size: clamp(0.85rem, 2.2vw, 1rem);
+}
+
+.instructions p {
+    margin-bottom: 4px;
+    font-size: clamp(0.7rem, 1.8vw, 0.85rem);
+    line-height: 1.4;
+}
+
+.admin-panel {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.admin-panel h3 {
+    margin-bottom: 8px;
+    color: #FFD700;
+    font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+}
+
+.quarter-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+.quarter-btn {
+    padding: 10px 20px;
+    font-size: clamp(0.85rem, 2.2vw, 1.1rem);
+    font-weight: bold;
+    border: 2px solid #fff;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.quarter-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.quarter-btn.selected {
+    background: #00C853;
+    border-color: #00C853;
+}
+
+.admin-instruction {
+    color: #FFD700;
+    font-size: clamp(0.7rem, 1.8vw, 0.9rem);
+    margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .team-label-left {
+        left: -70px;
+    }
+    
+    .vertical {
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 500px) {
+    .team-label-left {
+        left: -60px;
+    }
+    
+    .arrow {
+        font-size: 1.2rem;
+    }
+}
