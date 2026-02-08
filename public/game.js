@@ -117,7 +117,7 @@ function initZoom() {
             e.preventDefault();
             const dist = getDistance(e.touches);
             const newScale = initialScale * (dist / initialDistance);
-            setScale(Math.max(0.5, Math.min(3, newScale)));
+            setScale(Math.max(0.5, Math.min(1.5, newScale)));
         }
     }, { passive: false });
 }
@@ -129,7 +129,7 @@ function getDistance(touches) {
 }
 
 function zoom(delta) {
-    setScale(Math.max(0.5, Math.min(3, scale + delta)));
+    setScale(Math.max(0.5, Math.min(1.5, scale + delta)));
 }
 
 function setScale(newScale) {
